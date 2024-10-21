@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Website Blocker",
     "author": "Hikara",
-    "version": "0.1",
+    "version": "0.2.0",
     "description": "Blocks specific websites",
   "content_scripts":[
     {

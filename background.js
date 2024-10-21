@@ -248,14 +248,71 @@ const generateSTYLING = () => {
      </style>`;
 };
 
-const websiteList = ["www.bilibili.com"];
-const currentHostName = window.location.hostname;
+const minutes = 60;
+const hostname = window.location.hostname; // Get hostname of current tab
+const strictMode = "strictMode";
+const midnightResetKey = "lastResetDate";
+let activeTime = 0;
+let mode = 0; // default mode: 0, strict mode: 1
+let timer = null;
+let timeLimit = 10; // Time you want to limit (minutes)
+
+if (mode === 0) {
+  if (localStorage.getItem(hostname)) {
+    activeTime = parseInt(localStorage.getItem(hostname), 10) || 0;
+  }
+} else {
+  if (localStorage.getItem(strictMode)) {
+    activeTime = parseInt(localStorage.getItem(strictMode), 10) || 0;
+  }
+}
+
+function checkNextDay() {
+  const currentDate = new Date().toISOString().split("T")[0]; // Get YYYY-MM-DD
+  const lastResetDate = localStorage.getItem(midnightResetKey);
+
+  if (lastResetDate !== currentDate) {
+    // Reset active time and update the last reset date
+    activeTime = 0;
+    localStorage.setItem(hostname, activeTime);
+    localStorage.setItem(strictMode, activeTime);
+    localStorage.setItem(midnightResetKey, currentDate);
+  }
+}
+
+// add any websites witch you want to block to the list
+const websiteList = ["www.bilibili.com", "www.youtube.com"];
 
 // check the website then replace the web head and body
-if (websiteList.some((website) => currentHostName.includes(website))) {
-  let parts = currentHostName.split(".");
+if (websiteList.some((website) => hostname.includes(website))) {
+  let parts = hostname.split(".");
   let webName = parts.length > 2 ? parts[parts.length - 2] : parts[0];
 
-  document.head.innerHTML = generateSTYLING();
-  document.body.innerHTML = generateHTML(webName);
+  if (activeTime < timeLimit * minutes) {
+    window.addEventListener("load", () => {
+      timer = setInterval(() => {
+        activeTime++;
+        // console.log(`The active time is ${activeTime}`);
+        if (mode === 0) {
+          localStorage.setItem(hostname, activeTime);
+        } else {
+          localStorage.setItem(strictMode, activeTime);
+        }
+        if (activeTime >= timeLimit * minutes) {
+          console.log("Time limit reached, reloading the page...");
+          clearInterval(timer);
+          location.reload();
+        }
+      }, 1000);
+    });
+  } else {
+    //console.log(`Elapsed time is ${activeTime}`);
+    //alert("Exceed the active time limit.");
+    document.head.innerHTML = generateSTYLING();
+    document.body.innerHTML = generateHTML(webName);
+  }
+
+  checkNextDay();
+
+  setInterval(checkNextDay, 60000);
 }
